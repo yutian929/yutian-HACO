@@ -12,6 +12,7 @@ from lib.utils.contact_utils import get_contact_thres
 from lib.utils.vis_utils import ContactRenderer
 from lib.utils.preprocessing import augmentation_contact
 from lib.utils.demo_utils import remove_small_contact_components
+import trimesh
 
 
 class ContactGenerator:
@@ -76,6 +77,60 @@ class ContactGenerator:
     def _crop_img(self, orig_img, right_hand_bbox):
         crop_img, img2bb_trans, bb2img_trans, rot, do_flip, color_scale = augmentation_contact(orig_img.copy(), right_hand_bbox, 'test', enforce_flip=False)
         return crop_img
+    
+    def create_3d_mesh(self, contact_mask: np.ndarray, output_path: str = None, 
+                       left_vertex_id: int = None, right_vertex_id: int = None):
+        """
+        Create a 3D mesh with contact visualization.
+        
+        Args:
+            contact_mask: Binary contact mask (778,)
+            output_path: Optional path to save the mesh as GLB file
+            left_vertex_id: Left gripper vertex ID to highlight in red
+            right_vertex_id: Right gripper vertex ID to highlight in blue
+            
+        Returns:
+            mesh: trimesh.Trimesh object with contact colors
+            glb_path: Path to saved GLB file (if output_path provided)
+        """
+        # Create a copy of the hand mesh
+        mesh = self.contact_renderer.hand_model_mano.copy()
+        
+        # Define colors
+        default_color = np.array([130, 130, 130, 255])   # Gray
+        contact_color = np.array([0, 255, 0, 255])       # Green
+        left_gripper_color = np.array([255, 0, 0, 255])  # Red for left gripper
+        right_gripper_color = np.array([0, 0, 255, 255]) # Blue for right gripper
+        
+        # Set vertex colors based on contact mask
+        vertex_colors = np.tile(default_color, (mesh.vertices.shape[0], 1))
+        vertex_colors[contact_mask == 1] = contact_color
+        
+        # Highlight gripper vertices with different colors
+        if left_vertex_id is not None and 0 <= left_vertex_id < mesh.vertices.shape[0]:
+            vertex_colors[left_vertex_id] = left_gripper_color
+        
+        if right_vertex_id is not None and 0 <= right_vertex_id < mesh.vertices.shape[0]:
+            vertex_colors[right_vertex_id] = right_gripper_color
+        
+        mesh.visual.vertex_colors = vertex_colors
+        
+        glb_path = None
+        if output_path:
+            # Save as GLB file
+            mesh.export(output_path, file_type='glb')
+            glb_path = output_path
+            
+        return mesh, glb_path
+    
+    def get_vertex_coordinates(self):
+        """
+        Get the 3D coordinates of all 778 MANO vertices.
+        
+        Returns:
+            vertices: np.ndarray of shape (778, 3) containing xyz coordinates
+        """
+        return self.contact_renderer.hand_model_mano.vertices.copy()
     
     def single_process(self, orig_img: np.ndarray, right_hand_bbox: np.ndarray, hand_side: str):
         crop_img = self._crop_img(orig_img, right_hand_bbox)
