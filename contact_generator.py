@@ -19,7 +19,7 @@ class ContactGenerator:
     A class that handles the generation of hand-object contact estimation using the HACO model.
     """
 
-    def __init__(self, backbone: str = 'hamer', checkpoint: str = ''):
+    def __init__(self, backbone: str = 'hamer', checkpoint: str = os.path.join(os.path.dirname(__file__), 'release_checkpoint', 'haco_final_hamer_checkpoint.ckpt')):
         """
         Initializes the ContactGenerator with the specified backbone and checkpoint.
         

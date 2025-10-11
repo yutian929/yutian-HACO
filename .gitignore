@@ -21,6 +21,7 @@ data/preprocessed_data
 asset/
 outputs/
 release_checkpoint/
+experiments_demo_image/
 # experiment
 
 # Distribution / packaging
