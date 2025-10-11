@@ -9,15 +9,18 @@ __pycache__/
 *.so
 
 # custom
-# data/*/*.json
-# data/*/*/*.json
-# data/*/images
-# data/*/data
-# data/*/sequences
-# data/*/annotation
-# data/*/annotations
-# data/base_data
-# data/preprocessed_data
+data/*/*.json
+data/*/*/*.json
+data/*/images
+data/*/data
+data/*/sequences
+data/*/annotation
+data/*/annotations
+data/base_data
+data/preprocessed_data
+asset/
+outputs/
+release_checkpoint/
 # experiment
 
 # Distribution / packaging
@@ -196,3 +199,4 @@ fabric.properties
 
 # Editor-based Rest Client
 .idea/httpRequests
+

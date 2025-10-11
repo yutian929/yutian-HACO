@@ -22,7 +22,7 @@ class HACO(nn.Module):
 
         if 'vit' in cfg.MODEL.backbone_type:
             image = F.interpolate(image, size=(224, 224), mode='bilinear', align_corners=False)
-        
+            
         img_feat = self.backbone(image)
         contact_out, contact_336_out, contact_84_out, contact_joint_out = self.decoder(img_feat)
         

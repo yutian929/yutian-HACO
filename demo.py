@@ -23,6 +23,8 @@ parser.add_argument('--backbone', type=str, default='hamer', choices=['hamer', '
 parser.add_argument('--detector', type=str, default='wilor', choices=['wilor', 'mediapipe'], help='detector model')
 parser.add_argument('--checkpoint', type=str, default='', help='model path for demo')
 parser.add_argument('--input_path', type=str, default='asset/example_images', help='image path for demo')
+parser.add_argument('--save_bbox', action='store_true', help='save detected bbox data to .npz file')
+parser.add_argument('--bbox_output_path', type=str, default='outputs/bbox_data.npz', help='path to save bbox data')
 args = parser.parse_args()
 
 
@@ -44,7 +46,8 @@ contact_renderer = ContactRenderer()
 
 # Load demo images
 input_dir = args.input_path
-images = [f for f in os.listdir(input_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+images = sorted([f for f in os.listdir(input_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
+num_frames = len(images)
 
 
 # Initialize MediaPipe HandLandmarker
@@ -72,6 +75,17 @@ if args.checkpoint:
     model.load_state_dict(checkpoint['state_dict'])
 
 
+# Initialize bbox data storage (similar to bbox_processor.py)
+if args.save_bbox:
+    bbox_data = {
+        "right_hand_detected": np.zeros(num_frames, dtype=bool),
+        "right_bboxes": np.zeros((num_frames, 4), dtype=np.float32),
+        "right_bboxes_ctr": np.zeros((num_frames, 2), dtype=np.float32),
+        "left_hand_detected": np.zeros(num_frames, dtype=bool),
+        "left_bboxes": np.zeros((num_frames, 4), dtype=np.float32),
+        "left_bboxes_ctr": np.zeros((num_frames, 2), dtype=np.float32),
+    }
+
 ############################### Demo Loop ###############################
 for i, frame_name in tqdm(enumerate(images), total=len(images)):
     print(f"Processing: {frame_name}")
@@ -96,9 +110,23 @@ for i, frame_name in tqdm(enumerate(images), total=len(images)):
 
     if right_hand_bbox is None:
         print(f"Skipping {frame_name} - no hand detected.")
+        # Store empty detection if saving bbox
+        if args.save_bbox:
+            bbox_data["right_hand_detected"][i] = False
         continue
 
     print(f"Frame {i}: Right hand bbox: {right_hand_bbox}")
+    
+    # Store bbox data if requested (similar to bbox_processor.py)
+    if args.save_bbox:
+        bbox_data["right_hand_detected"][i] = True
+        bbox_data["right_bboxes"][i] = right_hand_bbox  # [x1, y1, x2, y2]
+        # Calculate bbox center
+        bbox_ctr = np.array([
+            (right_hand_bbox[0] + right_hand_bbox[2]) / 2,
+            (right_hand_bbox[1] + right_hand_bbox[3]) / 2
+        ], dtype=np.float32)
+        bbox_data["right_bboxes_ctr"][i] = bbox_ctr
 
     # Image preprocessing
     crop_img, img2bb_trans, bb2img_trans, rot, do_flip, color_scale = augmentation_contact(orig_img.copy(), right_hand_bbox, 'test', enforce_flip=False)
@@ -119,7 +147,7 @@ for i, frame_name in tqdm(enumerate(images), total=len(images)):
     with torch.no_grad():
         outputs = model({'input': {'image': img_tensor[None].to(device)}}, mode="test")
     ############# Run model #############
-
+    # breakpoint()
     # Save result
     os.makedirs('outputs', exist_ok=True)
     os.makedirs('outputs/detection', exist_ok=True)
@@ -135,3 +163,15 @@ for i, frame_name in tqdm(enumerate(images), total=len(images)):
     contact_rendered = contact_renderer.render_contact(crop_img[..., ::-1], contact_mask)
     cv2.imwrite(f'outputs/contact/{frame_name_base}.png', contact_rendered)
 ############################### Demo Loop ###############################
+
+# Save bbox data to .npz file (similar to bbox_processor.py _save_results method)
+if args.save_bbox:
+    # Create output directory if it doesn't exist
+    bbox_output_dir = os.path.dirname(args.bbox_output_path)
+    if bbox_output_dir and not os.path.exists(bbox_output_dir):
+        os.makedirs(bbox_output_dir)
+    
+    # Save detection data in compressed NumPy format
+    np.savez(args.bbox_output_path, **bbox_data)
+    print(f"\nBbox data saved to: {args.bbox_output_path}")
+    print(f"Detected hands in {np.sum(bbox_data['right_hand_detected'])}/{num_frames} frames")
