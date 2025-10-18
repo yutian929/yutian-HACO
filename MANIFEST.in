@@ -1,0 +1,5 @@
+include README.md
+include requirements.txt
+recursive-include haco *
+recursive-include haco/lib *
+recursive-include tests *
