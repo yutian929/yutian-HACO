@@ -1,10 +1,10 @@
-from haco import HACOContactEstimator, WILORHandDetector
+from hand2gripper_haco import HACOContactEstimator, WILORHandDetector
 import os
 import cv2
 from tqdm import tqdm
 
 if __name__ == "__main__":
-    print("=== HACO Hand Detection and Contact Estimation Demo ===")
+    print("=== Hand2Gripper HACO Hand Detection and Contact Estimation Demo ===")
     
     # ==================== Configuration Parameters ====================
     

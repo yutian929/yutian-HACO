@@ -35,7 +35,7 @@ class HACOContactEstimator:
         self.checkpoint_path = checkpoint_path
         self.experiment_dir = experiment_dir
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        
+        breakpoint()
         # Load config
         update_config(backbone_type=self.backbone, exp_dir=self.experiment_dir)
         
@@ -150,7 +150,7 @@ class WILORHandDetector:
         self.detector_type = detector_type
         self.detector_path = detector_path
         self.detector = None
-        
+        breakpoint()
         if self.detector_type == 'wilor':
             from ultralytics import YOLO
             self.detector = YOLO(self.detector_path)

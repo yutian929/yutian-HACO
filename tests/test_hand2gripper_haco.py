@@ -1,6 +1,6 @@
 import pytest
 import os
-from haco import HACOContactEstimator, WILORHandDetector
+from hand2gripper_haco import HACOContactEstimator, WILORHandDetector
 
 def test_haco_model():
     # Hand Detection Configuration
