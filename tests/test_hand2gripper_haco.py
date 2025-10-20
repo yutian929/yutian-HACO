@@ -8,7 +8,8 @@ def test_haco_model():
     # - 'wilor': Uses YOLO-based WILOR detector for hand detection
     # - 'mediapipe': Uses Google MediaPipe for hand landmark detection
     
-    detector_path = os.path.join(os.environ['HACO_BASE_DATA_PATH'], 'demo_data', 'wilor_detector.pt')  # Path to WILOR detector model
+    # detector_path = os.path.join(os.environ['HACO_BASE_DATA_PATH'], 'demo_data', 'wilor_detector.pt')  # Path to WILOR detector model
+    detector_path = os.path.join(os.path.dirname(__file__), '../base_data', 'demo_data', 'wilor_detector.pt')
     # - Required when detector_type='wilor'
     # - Should point to the trained YOLO model file (.pt)
     # - Default: 'data/base_data/demo_data/wilor_detector.pt'
@@ -21,7 +22,8 @@ def test_haco_model():
     # - 'hrnet-*': High-Resolution Network variants
     # - 'handoccnet': Hand occlusion network
     
-    checkpoint_path = os.path.join(os.environ['HACO_BASE_DATA_PATH'], 'release_checkpoint', 'haco_final_hamer_checkpoint.ckpt')  # Path to HACO model checkpoint
+    # checkpoint_path = os.path.join(os.environ['HACO_BASE_DATA_PATH'], 'release_checkpoint', 'haco_final_hamer_checkpoint.ckpt')  # Path to HACO model checkpoint
+    checkpoint_path = os.path.join(os.path.dirname(__file__), '../base_data', 'release_checkpoint', 'haco_final_hamer_checkpoint.ckpt')
     # - Path to the trained HACO model file (.pth or .ckpt)
     # - Leave empty '' if no checkpoint is available (will use random weights)
     # - Example: 'checkpoints/haco_hamer_best.pth'

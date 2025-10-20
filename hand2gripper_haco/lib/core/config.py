@@ -9,7 +9,8 @@ from ..utils.log_utils import init_dirs
 
 cfg = edict()
 try:
-    cfg.BASE_DATA_PATH = os.environ['HACO_BASE_DATA_PATH']
+    # cfg.BASE_DATA_PATH = os.environ['HACO_BASE_DATA_PATH']
+    cfg.BASE_DATA_PATH = os.path.join(os.path.dirname(__file__), '../../../base_data')
 except KeyError:
     raise KeyError("HACO_BASE_DATA_PATH is not set. Please set the HACO_BASE_DATA_PATH environment variable to the path of the base data.")
 
