@@ -13,8 +13,8 @@ timm
 smplx
 gdown
 mediapipe
-pyrender==0.1.33
+pyrender
 huggingface_hub
 pycocotools
 ultralytics
-networkx>=2.6
+networkx

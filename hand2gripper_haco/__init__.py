@@ -1,1 +1,1 @@
-from .hand2gripper_haco import HACOContactEstimator, WILORHandDetector
+from .hand2gripper_haco import HACOContactEstimator, WILORHandDetector, HACOContactEstimatorWithoutRenderer

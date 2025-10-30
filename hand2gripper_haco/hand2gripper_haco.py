@@ -199,3 +199,90 @@ class WILORHandDetector:
         
         cv2.imwrite(f'{output_dir}/detection/{frame_name_base}.png', 
                    cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
+
+
+class HACOContactEstimatorWithoutRenderer:
+    """
+    HACO model for hand-object contact estimation
+    """
+    
+    def __init__(self, backbone='hamer', checkpoint_path='', experiment_dir='experiments_demo_image'):
+        """
+        Initialize HACO contact estimator
+        
+        Args:
+            backbone (str): Backbone model type ('hamer', 'vit-l-16', 'vit-b-16', etc.)
+            checkpoint_path (str): Path to model checkpoint
+            experiment_dir (str): Experiment directory for config
+        """
+        self.backbone = backbone
+        self.checkpoint_path = checkpoint_path
+        self.experiment_dir = experiment_dir
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        
+        # Load config
+        update_config(backbone_type=self.backbone, exp_dir=self.experiment_dir)
+        
+        # Initialize model
+        self.model = HACO().to(self.device)
+        self.model.eval()
+        
+        # Load checkpoint if provided
+        if self.checkpoint_path:
+            checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
+            self.model.load_state_dict(checkpoint['state_dict'])
+            
+    def preprocess_image(self, image, bbox):
+        """
+        Preprocess image for model input
+        
+        Args:
+            image (np.ndarray): Input image
+            bbox (list): Hand bounding box [x, y, w, h]
+            
+        Returns:
+            torch.Tensor: Preprocessed image tensor
+        """
+        # Image preprocessing
+        crop_img, img2bb_trans, bb2img_trans, rot, do_flip, color_scale = augmentation_contact(
+            image.copy(), bbox, 'test', enforce_flip=False
+        )
+        
+        # Convert to model input format
+        if self.backbone in ['handoccnet'] or 'resnet' in cfg.MODEL.backbone_type or 'hrnet' in cfg.MODEL.backbone_type:
+            from torchvision import transforms
+            img_tensor = transforms.ToTensor()(crop_img.astype(np.float32) / 255.0)
+        elif self.backbone in ['hamer'] or 'vit' in cfg.MODEL.backbone_type:
+            from torchvision.transforms import Normalize
+            normalize = Normalize(mean=cfg.MODEL.img_mean, std=cfg.MODEL.img_std)
+            img_tensor = crop_img.transpose(2, 0, 1) / 255.0
+            img_tensor = normalize(torch.from_numpy(img_tensor)).float()
+        else:
+            raise NotImplementedError(f"Unsupported backbone: {self.backbone}")
+        
+        return img_tensor, crop_img
+    
+    def predict_contact(self, image, bbox):
+        """
+        Predict hand-object contact from image and bounding box
+        
+        Args:
+            image (np.ndarray): Input image
+            bbox (list): Hand bounding box [x, y, w, h]
+            
+        Returns:
+            dict: Contact prediction results
+        """
+        # Preprocess image
+        img_tensor, crop_img = self.preprocess_image(image, bbox)
+
+        eval_thres = get_contact_thres(self.backbone)
+        
+        # Run model
+        with torch.no_grad():
+            outputs = self.model({'input': {'image': img_tensor[None].to(self.device)}}, mode="test")
+        return {
+            'eval_thres': eval_thres,
+            'crop_img': crop_img,
+            'raw_outputs': outputs
+        }
